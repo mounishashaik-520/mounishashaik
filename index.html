@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mounisha Shaik — Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Outfit:wght@200;300;400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF;--surface:#F8F4F5;--surface2:#F0EAEC;
+  --ink:#1A0810;--ink-dim:rgba(26,8,16,0.5);--ink-faint:rgba(26,8,16,0.08);
+  --wine:#8B1A2F;--wine-bright:#B02040;--wine-glow:#CC2B4E;
+  --gold:#9B6A3A;--gold-dim:rgba(155,106,58,0.15);--gold-line:rgba(155,106,58,0.2);
+  --border:rgba(26,8,16,0.08);--border-med:rgba(26,8,16,0.15);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--ink);overflow-x:hidden;cursor:none;}
+
+/* CURSOR */
+#cur{position:fixed;width:10px;height:10px;background:var(--wine-bright);border-radius:50%;
+  pointer-events:none;z-index:10000;transform:translate(-50%,-50%);
+  transition:transform .12s ease;mix-blend-mode:multiply;}
+#cur-trail{position:fixed;width:30px;height:30px;border:1.5px solid rgba(176,32,64,0.25);
+  border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);
+  transition:left .07s,top .07s;}
+
+/* ══ GAME OVERLAY ══ */
+#game-overlay{position:fixed;inset:0;z-index:5000;display:none;flex-direction:column;background:#FDFAF9;overflow:hidden;}
+body.anim-mode #game-overlay{display:flex;}
+body.anim-mode{overflow:hidden;}
+
+#game-canvas{display:block;width:100%;flex:1;cursor:none;}
+
+/* HUD */
+#game-hud{
+  position:absolute;top:0;left:0;right:0;height:58px;
+  display:flex;align-items:center;padding:0 20px;gap:20px;
+  background:rgba(255,250,249,0.95);backdrop-filter:blur(12px);
+  border-bottom:2px solid rgba(139,26,47,0.15);
+  font-family:'Share Tech Mono',monospace;z-index:5001;
+}
+.hud-logo{font-size:14px;color:var(--wine-bright);letter-spacing:2px;font-weight:700;margin-right:auto;font-family:'Playfair Display',serif;font-style:italic;}
+.hud-stat{display:flex;align-items:center;gap:7px;font-size:10px;color:rgba(26,8,16,0.45);letter-spacing:1.5px;text-transform:uppercase;}
+.hud-stat-val{color:var(--wine-bright);font-size:14px;font-weight:700;font-family:'Share Tech Mono',monospace;}
+.hud-bar-wrap{width:80px;height:5px;background:rgba(26,8,16,0.08);border-radius:3px;overflow:hidden;}
+.hud-bar{height:100%;background:linear-gradient(90deg,var(--wine),var(--wine-glow));border-radius:3px;transition:width .4s;}
+.hud-zone{font-size:10px;color:var(--gold);letter-spacing:2.5px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;}
+.hud-lvl{font-size:10px;color:var(--wine-bright);letter-spacing:1.5px;font-family:'Share Tech Mono',monospace;}
+
+/* INFO CARD (gem popup) */
+#info-card{
+  position:absolute;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);
+  width:min(520px,90vw);
+  background:#FFFAF9;border:1.5px solid rgba(139,26,47,0.2);
+  box-shadow:0 8px 40px rgba(139,26,47,0.12);
+  padding:0;opacity:0;transition:opacity .35s,transform .35s;pointer-events:none;z-index:5005;
+}
+#info-card.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+.ic-header{
+  background:var(--wine);padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ic-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:#fff;font-style:italic;}
+.ic-tag{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,200,210,0.8);letter-spacing:2px;text-transform:uppercase;}
+.ic-close{font-family:'Share Tech Mono',monospace;font-size:12px;color:rgba(255,255,255,0.6);cursor:pointer;letter-spacing:1px;background:none;border:none;padding:4px 8px;}
+.ic-close:hover{color:#fff;}
+.ic-body{padding:18px 20px;display:flex;flex-direction:column;gap:10px;}
+.ic-fact{font-size:13px;color:var(--ink-dim);line-height:1.7;padding-left:16px;position:relative;}
+.ic-fact::before{content:'▸';position:absolute;left:0;color:var(--wine-bright);font-size:10px;top:3px;}
+.ic-skill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.ic-skill{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;
+  padding:4px 10px;border:1px solid rgba(139,26,47,0.25);color:var(--wine);background:rgba(139,26,47,0.04);}
+.ic-xp{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--wine-bright);
+  letter-spacing:1.5px;text-align:right;margin-top:6px;padding-top:10px;border-top:1px solid var(--border);}
+
+/* TOAST */
+#game-toast{
+  position:absolute;top:72px;left:50%;transform:translateX(-50%);
+  font-family:'Share Tech Mono',monospace;background:var(--wine);
+  color:#fff;font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  padding:8px 22px;border-bottom:2px solid rgba(204,43,78,0.5);
+  opacity:0;transition:opacity .25s;pointer-events:none;z-index:5003;white-space:nowrap;
+}
+#game-toast.show{opacity:1;}
+
+/* MINI MAP */
+#mini-map{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  width:260px;height:28px;
+  background:rgba(255,250,249,0.9);border:1px solid rgba(139,26,47,0.2);
+  font-family:'Share Tech Mono',monospace;z-index:5002;overflow:hidden;
+}
+#mini-map-fill{height:100%;background:rgba(139,26,47,0.12);transition:width .3s;}
+#mini-map-player{position:absolute;top:50%;width:6px;height:16px;background:var(--wine-bright);transform:translate(-50%,-50%);transition:left .1s;}
+.mini-zone-label{position:absolute;top:50%;transform:translateY(-50%);font-size:8px;color:rgba(139,26,47,0.5);letter-spacing:1px;text-transform:uppercase;}
+
+/* EXIT */
+#game-exit{
+  position:absolute;top:14px;right:20px;
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(26,8,16,0.4);background:rgba(26,8,16,0.04);border:1px solid rgba(26,8,16,0.1);
+  padding:7px 16px;cursor:pointer;transition:all .2s;z-index:5002;
+}
+#game-exit:hover{color:var(--wine-bright);border-color:var(--wine);}
+
+/* TOUCH CONTROLS */
+#touch-controls{
+  position:absolute;bottom:60px;left:0;right:0;display:none;
+  justify-content:space-between;padding:0 24px;z-index:5002;pointer-events:none;
+}
+@media(max-width:700px){#touch-controls{display:flex;}}
+.t-btn{
+  width:54px;height:54px;border-radius:50%;
+  background:rgba(139,26,47,0.15);border:1.5px solid rgba(139,26,47,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;pointer-events:all;user-select:none;-webkit-user-select:none;
+  color:var(--wine-bright);font-family:'Share Tech Mono',monospace;
+}
+.t-dpad{display:flex;gap:6px;align-items:center;}
+
+/* INTRO */
+#game-intro{
+  position:absolute;inset:0;z-index:5010;background:#FDFAF9;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .5s;
+}
+#game-intro.hidden{opacity:0;pointer-events:none;}
+.gi-eyebrow{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;
+  color:rgba(139,26,47,0.5);text-transform:uppercase;margin-bottom:20px;}
+.gi-title{font-family:'Playfair Display',serif;font-size:clamp(48px,8vw,86px);font-weight:900;
+  font-style:italic;color:var(--wine-bright);letter-spacing:-3px;line-height:1;margin-bottom:8px;}
+.gi-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--ink-dim);letter-spacing:2px;margin-bottom:40px;}
+.gi-desc{font-size:13px;color:var(--ink-dim);line-height:1.9;text-align:center;max-width:460px;margin-bottom:36px;font-family:'Outfit',sans-serif;font-weight:300;}
+.gi-keys{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin-bottom:36px;}
+.gi-key{width:38px;height:38px;border:1.5px solid rgba(139,26,47,0.3);background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--wine-bright);}
+.gi-key-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--ink-dim);letter-spacing:1px;text-transform:uppercase;margin-top:4px;text-align:center;}
+.gi-key-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.gi-start{
+  font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:3px;text-transform:uppercase;
+  color:#fff;background:var(--wine);border:none;padding:14px 40px;cursor:pointer;
+  animation:startPulse 2s ease-in-out infinite;
+}
+@keyframes startPulse{0%,100%{box-shadow:0 0 0 0 rgba(139,26,47,0.3);}50%{box-shadow:0 0 0 14px rgba(139,26,47,0);}}
+.gi-gems-preview{display:flex;gap:8px;margin-top:20px;align-items:center;}
+.gi-gem-dot{width:12px;height:12px;border:1.5px solid rgba(139,26,47,0.3);}
+.gi-gem-count{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--ink-dim);letter-spacing:1px;}
+
+/* ══ NORMAL PORTFOLIO ══ */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;align-items:center;
+  justify-content:space-between;padding:0 60px;height:68px;
+  background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.nav-logo{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--ink);}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:var(--wine-bright);display:inline-block;
+  margin-left:5px;vertical-align:middle;animation:blink 2.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.15;}}
+
+#mode-toggle{position:fixed;top:18px;right:60px;z-index:600;display:flex;align-items:center;
+  background:var(--surface2);border:1px solid var(--border-med);border-radius:100px;padding:4px;gap:2px;}
+.mode-btn{font-family:'Outfit',sans-serif;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;
+  font-weight:500;color:var(--ink-dim);padding:7px 16px;border-radius:100px;
+  background:transparent;border:none;cursor:pointer;transition:all .3s;white-space:nowrap;}
+.mode-btn.active{background:var(--wine);color:#fff;}
+.mode-btn:hover:not(.active){color:var(--ink);}
+
+#hero{min-height:100vh;display:flex;flex-direction:column;align-items:flex-start;
+  justify-content:center;padding:120px 60px 80px;position:relative;overflow:hidden;}
+.hero-bg-text{position:absolute;right:-20px;top:50%;transform:translateY(-50%);
+  font-family:'Playfair Display',serif;font-size:clamp(140px,18vw,260px);font-weight:900;
+  font-style:italic;color:transparent;-webkit-text-stroke:1px rgba(139,26,47,0.05);
+  letter-spacing:-6px;line-height:1;user-select:none;pointer-events:none;white-space:nowrap;}
+.hero-line{width:48px;height:1px;background:var(--wine-bright);margin-bottom:32px;}
+.hero-eyebrow{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);font-weight:400;margin-bottom:28px;}
+h1.hero-name{font-family:'Playfair Display',serif;font-size:clamp(68px,10vw,140px);
+  font-weight:900;line-height:.92;letter-spacing:-3px;color:var(--ink);margin-bottom:36px;}
+h1.hero-name em{font-style:italic;color:var(--wine-bright);display:block;}
+.hero-tagline{font-size:clamp(14px,1.5vw,17px);color:var(--ink-dim);max-width:480px;
+  line-height:1.85;font-weight:300;border-left:2px solid var(--wine);padding-left:20px;}
+.hero-scroll{position:absolute;bottom:48px;left:60px;display:flex;align-items:center;gap:12px;
+  font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink-dim);}
+.scroll-line{width:40px;height:1px;background:var(--wine-bright);}
+.divider{height:1px;background:var(--border);margin:0 60px;}
+section{padding:120px 60px;}
+.section-label{font-size:10px;letter-spacing:3.5px;text-transform:uppercase;color:var(--wine-bright);
+  font-weight:500;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
+.section-label::before{content:'';width:24px;height:1px;background:var(--wine-bright);opacity:.6;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(40px,5.5vw,72px);
+  font-weight:700;line-height:1.05;letter-spacing:-1.5px;margin-bottom:72px;}
+.section-title em{font-style:italic;color:var(--wine-bright);}
+#about{max-width:1200px;margin:0 auto;}
+.about-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:80px;align-items:start;}
+.about-text p{font-size:15.5px;line-height:1.95;color:var(--ink-dim);font-weight:300;margin-bottom:20px;}
+.about-text p:last-child{margin-bottom:0;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;}
+.stat-item{padding:32px 28px;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;transition:background .3s;}
+.stat-item:hover{background:var(--surface2);}
+.stat-num{font-family:'Playfair Display',serif;font-size:44px;font-weight:900;color:var(--wine-bright);line-height:1;display:flex;align-items:baseline;gap:3px;}
+.stat-num sup{font-size:18px;font-weight:400;}
+.stat-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-dim);margin-top:10px;font-weight:500;}
+#experiences{max-width:1200px;margin:0 auto;}
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.exp-card{padding:44px 40px;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;transition:border-color .3s,transform .35s;}
+.exp-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--wine),var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .4s;}
+.exp-card:hover{border-color:rgba(139,26,47,.3);transform:translateY(-5px);}
+.exp-card:hover::after{transform:scaleX(1);}
+.exp-icon{font-size:28px;margin-bottom:20px;display:block;}
+.exp-tag{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:10px;}
+.exp-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;margin-bottom:14px;color:var(--ink);}
+.exp-desc{font-size:13.5px;color:var(--ink-dim);line-height:1.75;font-weight:300;}
+#projects{max-width:1200px;margin:0 auto;}
+.project-card{background:var(--surface);border:1px solid var(--border);overflow:hidden;}
+.project-header{padding:24px 52px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.project-num-tag{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink-dim);}
+.project-pill{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--wine-bright);border:1px solid rgba(139,26,47,.3);padding:4px 12px;font-weight:500;}
+.project-year{font-size:12px;color:var(--ink-dim);font-weight:300;}
+.project-body{display:grid;grid-template-columns:1fr 1fr;}
+.project-info{padding:56px 52px;border-right:1px solid var(--border);}
+.project-name{font-family:'Playfair Display',serif;font-size:64px;font-weight:900;letter-spacing:-2px;color:var(--ink);margin-bottom:6px;line-height:1;}
+.project-name-sub{font-family:'Playfair Display',serif;font-size:18px;font-style:italic;color:var(--wine-bright);margin-bottom:32px;}
+.project-desc{font-size:14px;line-height:1.9;color:var(--ink-dim);font-weight:300;margin-bottom:16px;}
+.project-desc:last-of-type{margin-bottom:32px;}
+.tag-row{display:flex;flex-wrap:wrap;gap:8px;}
+.tag{font-size:11px;padding:5px 14px;border:1px solid var(--border);color:var(--ink-dim);transition:border-color .2s,color .2s;}
+.tag:hover{border-color:var(--wine);color:var(--wine-bright);}
+.project-meta{padding:56px 48px;}
+.meta-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--wine-bright);font-weight:500;margin-bottom:28px;display:flex;align-items:center;gap:10px;}
+.meta-label::after{content:'';flex:1;height:1px;background:var(--gold-line);}
+.feature-list{list-style:none;display:flex;flex-direction:column;}
+.feature-list li{font-size:13.5px;color:var(--ink-dim);line-height:1.65;padding:12px 0 12px 18px;position:relative;border-bottom:1px solid var(--border);transition:color .2s,padding-left .2s;}
+.feature-list li:last-child{border-bottom:none;}
+.feature-list li::before{content:'→';position:absolute;left:0;color:var(--wine-bright);font-size:11px;transition:transform .2s;}
+.feature-list li:hover{color:var(--ink);padding-left:22px;}
+.feature-list li:hover::before{transform:translateX(2px);}
+#skills{max-width:1200px;margin:0 auto;}
+.skills-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:48px;}
+.sname{font-size:15px;font-weight:400;color:var(--ink);padding:11px 24px;border:1px solid var(--border);background:var(--surface);transition:border-color .25s,color .25s,background .25s;}
+.sname:hover{border-color:var(--wine);color:var(--wine-bright);background:rgba(139,26,47,.04);}
+.tech-pills{display:flex;flex-wrap:wrap;gap:8px;}
+.tech-pill{font-size:11px;padding:6px 16px;border:1px solid var(--border);color:var(--ink-dim);transition:border-color .2s,color .2s;}
+.tech-pill:hover{border-color:var(--gold);color:var(--gold);}
+#contact{max-width:1200px;margin:0 auto;}
+.contact-layout{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start;}
+.contact-big{font-family:'Playfair Display',serif;font-size:clamp(44px,6vw,80px);font-weight:900;line-height:1.0;letter-spacing:-2px;}
+.contact-big em{font-style:italic;color:var(--wine-bright);display:block;}
+.contact-right{padding-top:12px;}
+.contact-sub{font-size:15px;color:var(--ink-dim);line-height:1.85;font-weight:300;margin-bottom:44px;}
+.contact-items{display:flex;flex-direction:column;}
+.contact-item{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--border);}
+.contact-item:first-child{border-top:1px solid var(--border);}
+.contact-key{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--ink-dim);}
+.contact-val{font-size:14px;color:var(--ink);text-decoration:none;transition:color .2s;}
+a.contact-val:hover{color:var(--wine-bright);}
+footer{text-align:center;padding:40px 60px;border-top:1px solid var(--border);
+  font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;gap:16px;}
+footer span{color:var(--wine-bright);}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .75s,transform .75s;}
+.reveal.visible{opacity:1;transform:none;}
+@media(max-width:900px){
+  nav{padding:0 20px;}#mode-toggle{right:20px;top:14px;}section{padding:80px 24px;}
+  .divider{margin:0 24px;}#hero{padding:100px 24px 70px;}.hero-bg-text{display:none;}
+  .about-grid,.exp-grid,.project-body,.contact-layout{grid-template-columns:1fr;gap:40px;}
+  .project-info{border-right:none;border-bottom:1px solid var(--border);}
+  .project-info,.project-meta{padding:36px 28px;}.project-header{padding:20px 28px;}
+  h1.hero-name{letter-spacing:-1.5px;}.hero-scroll{display:none;}.mode-btn{font-size:9px;padding:6px 12px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ GAME OVERLAY ══ -->
+<div id="game-overlay">
+
+  <!-- INTRO SCREEN -->
+  <div id="game-intro">
+    <div class="gi-eyebrow">Interactive Portfolio · Game Mode</div>
+    <div class="gi-title">Mounisha.exe</div>
+    <div class="gi-sub">// Collect gems · Unlock my story · Defeat bugs</div>
+    <div class="gi-desc">
+      Walk through my world. Each gem unlocks a real fact about me — my skills, projects, achievements, and personality. Stomp the "bugs" blocking your path. Discover my full story.
+    </div>
+    <div class="gi-keys">
+      <div class="gi-key-wrap"><div class="gi-key">W</div><div class="gi-key-lbl">Jump</div></div>
+      <div class="gi-key-wrap"><div class="gi-key">A</div><div class="gi-key-lbl">Left</div></div>
+      <div class="gi-key-wrap"><div class="gi-key">D</div><div class="gi-key-lbl">Right</div></div>
+      <div class="gi-key-wrap"><div class="gi-key" style="width:56px;font-size:10px;">SPC</div><div class="gi-key-lbl">Jump</div></div>
+      <div class="gi-key-wrap"><div class="gi-key" style="width:56px;font-size:10px;">↑↓←→</div><div class="gi-key-lbl">Move</div></div>
+      <div class="gi-key-wrap"><div class="gi-key" style="width:44px;font-size:10px;">E</div><div class="gi-key-lbl">Read</div></div>
+    </div>
+    <div class="gi-gems-preview">
+      <span class="gi-gem-count">16 STORY GEMS TO COLLECT</span>
+      <div class="gi-gem-dot" style="background:rgba(176,32,64,0.15);"></div>
+      <div class="gi-gem-dot" style="background:rgba(155,106,58,0.15);"></div>
+      <div class="gi-gem-dot" style="background:rgba(26,8,16,0.1);"></div>
+    </div>
+    <button class="gi-start" id="game-start-btn">▶ ENTER WORLD</button>
+  </div>
+
+  <!-- HUD -->
+  <div id="game-hud">
+    <div class="hud-logo">Mounisha.exe</div>
+    <div class="hud-stat">HP <div class="hud-bar-wrap"><div class="hud-bar" id="hp-bar" style="width:100%"></div></div></div>
+    <div class="hud-stat">XP <span class="hud-stat-val" id="xp-val">0</span></div>
+    <div class="hud-stat">GEMS <span class="hud-stat-val" id="gem-val">0</span>/16</div>
+    <div class="hud-stat">ZONE <span class="hud-zone" id="zone-name">START</span></div>
+    <button id="game-exit">✕ EXIT</button>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Info Card -->
+  <div id="info-card">
+    <div class="ic-header">
+      <div>
+        <div class="ic-tag" id="ic-tag">GEM #1</div>
+        <div class="ic-title" id="ic-title">Loading...</div>
+      </div>
+      <button class="ic-close" id="ic-close">[ CLOSE ]</button>
+    </div>
+    <div class="ic-body" id="ic-body"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="game-toast"></div>
+
+  <!-- Mini map -->
+  <div id="mini-map">
+    <div id="mini-map-fill"></div>
+    <div id="mini-map-player"></div>
+  </div>
+
+  <!-- Touch Controls -->
+  <div id="touch-controls">
+    <div class="t-dpad">
+      <div class="t-btn" id="t-left">◀</div>
+      <div class="t-btn" id="t-jump">▲</div>
+      <div class="t-btn" id="t-right">▶</div>
+    </div>
+    <div class="t-btn" id="t-read">E</div>
+  </div>
+</div>
+
+<!-- ══ NORMAL PORTFOLIO ══ -->
+<div id="cur"></div><div id="cur-trail"></div>
+
+<div id="mode-toggle">
+  <button class="mode-btn active" data-mode="normal">Normal</button>
+  <button class="mode-btn" data-mode="anim">🎮 Game Mode</button>
+</div>
+
+<nav><div class="nav-logo">Mounisha Shaik<span class="nav-dot"></span></div></nav>
+
+<section id="hero">
+  <div class="hero-bg-text">Shaik</div>
+  <div class="hero-line"></div>
+  <div class="hero-eyebrow">B.Tech · CMR Institute of Technology · 2026</div>
+  <h1 class="hero-name">Mounisha<em>Shaik</em></h1>
+  <p class="hero-tagline">Full-stack developer and AI integrator building products that sit at the intersection of technology and human experience.</p>
+  <div class="hero-scroll"><div class="scroll-line"></div><span>Scroll to explore</span></div>
+</section>
+<div class="divider"></div>
+<section id="about">
+  <div class="section-label reveal">About</div>
+  <div class="section-title reveal">The person<br>behind the <em>code</em></div>
+  <div class="about-grid">
+    <div class="about-text reveal">
+      <p>I'm a first-year B.Tech student at CMR Institute of Technology, Hyderabad, with a deep curiosity about how technology can be made more humane. I build things that actually help people — not just things that look impressive.</p>
+      <p>My work lives at the intersection of AI, full-stack development, and thoughtful design. I care deeply about the experience on the other side of the screen — how something feels to use, not just how it functions.</p>
+      <p>I was selected for an internship in my first year and competed in a 48-hour hackathon — both before most of my peers had written their first project. I move fast, but I don't cut corners.</p>
+    </div>
+    <div class="stats-grid reveal">
+      <div class="stat-item"><div class="stat-num">1<sup>st</sup></div><div class="stat-label">Year B.Tech</div></div>
+      <div class="stat-item"><div class="stat-num">AI</div><div class="stat-label">Powered Projects</div></div>
+      <div class="stat-item"><div class="stat-num">Full</div><div class="stat-label">Stack Dev</div></div>
+      <div class="stat-item"><div class="stat-num">∞</div><div class="stat-label">Curiosity</div></div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+<section id="experiences">
+  <div class="section-label reveal">Special Experiences</div>
+  <div class="section-title reveal">Moments that<br><em>defined me</em></div>
+  <div class="exp-grid">
+    <div class="exp-card reveal">
+      <span class="exp-icon">⚡</span>
+      <div class="exp-tag">2026 · Hackathon</div>
+      <div class="exp-title">48-Hour Hackathon</div>
+      <p class="exp-desc">Competed & Delivered in 48 Hours. Built, iterated, and shipped a full product under real pressure — learning more in two days than most do in a semester.</p>
+    </div>
+    <div class="exp-card reveal">
+      <span class="exp-icon">🚀</span>
+      <div class="exp-tag">1st Year · Internship</div>
+      <div class="exp-title">Selected for Internship in 1st Year</div>
+      <p class="exp-desc">Earned a competitive internship before most peers had even started their first project — ahead of the curve, from day one.</p>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+<section id="projects">
+  <div class="section-label reveal">Selected Work</div>
+  <div class="section-title reveal">Projects that<br><em>matter</em></div>
+  <div class="project-card reveal">
+    <div class="project-header">
+      <div style="display:flex;align-items:center;gap:24px;"><span class="project-num-tag">PROJECT / 01</span><span class="project-pill">Live</span></div>
+      <span class="project-year">2026</span>
+    </div>
+    <div class="project-body">
+      <div class="project-info">
+        <div class="project-name">MindMate</div>
+        <div class="project-name-sub">AI Mental Wellness Platform</div>
+        <p class="project-desc">An AI-powered mental wellness platform built for students. MindMate helps users reduce stress, track mood, and build healthy habits through an empathetic AI companion and immersive wellness tools.</p>
+        <p class="project-desc">Powered by Claude with emotional context awareness. Facial emotion detection adds real-time awareness.</p>
+        <p class="project-desc">Every wellness action is verified — authenticity is core to the design philosophy.</p>
+        <div class="tag-row">
+          <span class="tag">React</span><span class="tag">Tailwind CSS</span><span class="tag">Claude AI</span><span class="tag">face-api.js</span><span class="tag">Node.js</span><span class="tag">MongoDB</span>
+        </div>
+      </div>
+      <div class="project-meta">
+        <div class="meta-label">What It Does</div>
+        <ul class="feature-list">
+          <li>AI Chat Companion powered by Claude</li><li>Real-time facial emotion detection</li>
+          <li>Mood flow engine across 8 emotional states</li><li>Virtual wellness garden</li>
+          <li>Guided breathing & meditation</li><li>4 mindfulness brain games</li>
+          <li>Streak & XP gamification</li><li>Community positivity wall</li><li>Personal analytics dashboard</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="divider"></div>
+<section id="skills">
+  <div class="section-label reveal">Skills & Technologies</div>
+  <div class="section-title reveal">What I<br><em>work with</em></div>
+  <div class="skills-row reveal">
+    <span class="sname">HTML5</span><span class="sname">CSS3</span><span class="sname">JavaScript</span><span class="sname">React</span><span class="sname">Tailwind CSS</span><span class="sname">Responsive Design</span><span class="sname">UI/UX Design</span><span class="sname">AI Integration</span><span class="sname">Git & GitHub</span><span class="sname">Node.js</span>
+  </div>
+  <div class="tech-pills reveal">
+    <span class="tech-pill">HTML5</span><span class="tech-pill">CSS3</span><span class="tech-pill">JavaScript ES6+</span><span class="tech-pill">React.js</span><span class="tech-pill">Tailwind CSS</span><span class="tech-pill">Node.js</span><span class="tech-pill">Claude AI API</span><span class="tech-pill">face-api.js</span><span class="tech-pill">MongoDB</span><span class="tech-pill">Git</span><span class="tech-pill">GitHub</span><span class="tech-pill">REST APIs</span><span class="tech-pill">Figma</span>
+  </div>
+</section>
+<div class="divider"></div>
+<section id="contact">
+  <div class="section-label reveal">Contact</div>
+  <div class="contact-layout reveal">
+    <div class="contact-big">Let's build<em>together.</em></div>
+    <div class="contact-right">
+      <p class="contact-sub">Always open to interesting conversations, collaboration opportunities, and new projects. Reach out — I respond.</p>
+      <div class="contact-items">
+        <div class="contact-item"><span class="contact-key">Email</span><a href="mailto:mounishashaik@email.com" class="contact-val">mounishashaik@email.com</a></div>
+        <div class="contact-item"><span class="contact-key">Location</span><span class="contact-val">Hyderabad, India</span></div>
+        <div class="contact-item"><span class="contact-key">Status</span>
+          <span class="contact-val" style="display:flex;align-items:center;gap:8px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--wine-bright);display:inline-block;animation:blink 2s infinite;"></span>Open to opportunities
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<footer><span>HTML</span> · <span>CSS</span> · <span>JS</span> · <span>React</span> · <span>AI</span>&nbsp;&nbsp;—&nbsp;&nbsp;Mounisha Shaik © 2026</footer>
+
+<script>
+/* ════ CURSOR ════ */
+const cur=document.getElementById('cur'),trail=document.getElementById('cur-trail');
+let MX=window.innerWidth/2,MY=window.innerHeight/2;
+document.addEventListener('mousemove',e=>{MX=e.clientX;MY=e.clientY;cur.style.left=MX+'px';cur.style.top=MY+'px';setTimeout(()=>{trail.style.left=MX+'px';trail.style.top=MY+'px';},65);});
+document.addEventListener('mousedown',()=>cur.style.transform='translate(-50%,-50%) scale(2)');
+document.addEventListener('mouseup',()=>cur.style.transform='translate(-50%,-50%) scale(1)');
+
+/* ════ SCROLL REVEAL ════ */
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:.1,rootMargin:'0px 0px -30px 0px'});
+document.querySelectorAll('.reveal,.divider').forEach(el=>obs.observe(el));
+
+/* ════ MODE TOGGLE ════ */
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(btn.dataset.mode==='anim')document.body.classList.add('anim-mode');
+    else{document.body.classList.remove('anim-mode');stopGame();}
+  });
+});
+
+/* ════════════════════════════════════════
+   GEM DATA — 16 rich story gems
+════════════════════════════════════════ */
+const GEM_DATA=[
+  {id:1,tag:'IDENTITY · GEM 1',title:'Who Am I?',color:'#B02040',xpVal:60,
+   facts:["I'm a first-year B.Tech student at CMR Institute of Technology, Hyderabad — one of the region's top engineering colleges.",
+          "I build things that actually help people, not just things that look impressive.",
+          "Hyderabad-born, curious by nature, obsessed with the human side of technology."],
+   skills:['B.Tech CSE','Hyderabad','CMR Institute','2026 Batch']},
+
+  {id:2,tag:'MINDSET · GEM 2',title:'How I Think',color:'#9B6A3A',xpVal:60,
+   facts:["I believe technology should be humane first, functional second. If it doesn't feel good to use, it isn't finished.",
+          "I move fast without cutting corners — a rare combination that earned me early career opportunities most peers hadn't reached.",
+          "I care deeply about what's on the other side of the screen: real people with real emotions."],
+   skills:['Human-Centred','Attention to Detail','Fast Learner','Problem Solver']},
+
+  {id:3,tag:'FRONTEND · GEM 3',title:'My Frontend Skills',color:'#B02040',xpVal:70,
+   facts:["I build clean, responsive, and beautiful UIs using modern web standards.",
+          "I'm proficient in React.js with component-driven architecture — hooks, context, state management.",
+          "I write CSS3 that is precise and intentional — Tailwind CSS for velocity, custom CSS for craft."],
+   skills:['HTML5','CSS3','JavaScript ES6+','React.js','Tailwind CSS','Responsive Design']},
+
+  {id:4,tag:'BACKEND · GEM 4',title:'My Backend & Data',color:'#9B6A3A',xpVal:70,
+   facts:["I'm comfortable across the full stack — from REST API design to database schema planning.",
+          "I use Node.js for scalable server-side logic and MongoDB for flexible, document-based data storage.",
+          "I understand how the frontend and backend breathe together — not just how to connect them, but why."],
+   skills:['Node.js','MongoDB','REST APIs','Express.js','JSON','Async/Await']},
+
+  {id:5,tag:'AI · GEM 5',title:'My AI Integration',color:'#B02040',xpVal:80,
+   facts:["I integrate Claude AI (Anthropic) for emotionally aware, context-sensitive conversations — not just chatbots.",
+          "I use face-api.js for real-time facial emotion detection via webcam — mapping 8 distinct emotional states.",
+          "I believe AI should enhance human experience, not replace human nuance."],
+   skills:['Claude AI API','face-api.js','Prompt Engineering','Emotion AI','Anthropic SDK']},
+
+  {id:6,tag:'PROJECT · GEM 6',title:'MindMate — My Idea',color:'#9B6A3A',xpVal:80,
+   facts:["MindMate was born from a simple observation: students are overwhelmed, and existing mental health apps feel clinical and cold.",
+          "I set out to build something that felt like a friend — not a therapist dashboard.",
+          "The result: an AI companion that listens, responds with emotional intelligence, and grows with you."],
+   skills:['Product Thinking','User Empathy','Problem Framing','Ideation']},
+
+  {id:7,tag:'PROJECT · GEM 7',title:'MindMate — Features',color:'#B02040',xpVal:80,
+   facts:["My mood flow engine tracks emotional state across 8 states. The UI literally changes colour and tone based on how you feel.",
+          "A virtual wellness garden grows as you complete real activities — breathing exercises, journaling, gratitude entries.",
+          "4 mindfulness brain games, streak tracking, XP system, and a community positivity wall — all fully functional."],
+   skills:['React','Claude AI','face-api.js','Node.js','MongoDB','Gamification']},
+
+  {id:8,tag:'PROJECT · GEM 8',title:'MindMate — Tech Deep Dive',color:'#9B6A3A',xpVal:80,
+   facts:["The breathing exercise is actually verified — my app times your real breathing using the camera before marking it complete.",
+          "My Claude integration uses dynamic system prompts that shift based on detected emotional state — stressed, lonely, anxious, or happy each trigger a different conversational mode.",
+          "Full authentication system, personal analytics dashboard, and responsive across all screen sizes."],
+   skills:['Claude API','System Prompting','WebRTC','Canvas API','JWT Auth','Responsive']},
+
+  {id:9,tag:'ACHIEVEMENT · GEM 9',title:'48-Hour Hackathon',color:'#B02040',xpVal:90,
+   facts:["I competed in a 48-hour hackathon and shipped a complete, working product — not just a prototype.",
+          "I built, iterated, and presented under real pressure. The experience taught me more in two days than a full semester of coursework.",
+          "This was before most of my peers had even built their first personal project."],
+   skills:['Rapid Prototyping','Team Collaboration','Pitching','Delivery Under Pressure']},
+
+  {id:10,tag:'ACHIEVEMENT · GEM 10',title:'1st Year Internship',color:'#9B6A3A',xpVal:90,
+   facts:["I was selected for a competitive internship while still in my first year of B.Tech — ahead of the curve by years.",
+          "Most internship opportunities go to 3rd or 4th year students. Getting one in Year 1 signals genuine self-driven skill.",
+          "My selection was based on my portfolio work and technical ability, not just grades."],
+   skills:['Self-driven','Professional Readiness','Portfolio Building','Real-world Impact']},
+
+  {id:11,tag:'TOOLS · GEM 11',title:'My Design & Tools',color:'#B02040',xpVal:60,
+   facts:["I use Figma for UI design and prototyping — I move from idea to high-fidelity mockup before writing a line of code.",
+          "I use Git & GitHub for version control and collaboration. I understand branching, PRs, and clean commit history.",
+          "I'm comfortable with the full developer workflow: design → code → review → deploy."],
+   skills:['Figma','Git','GitHub','VS Code','Chrome DevTools','Vercel']},
+
+  {id:12,tag:'PHILOSOPHY · GEM 12',title:'My Design Philosophy',color:'#9B6A3A',xpVal:70,
+   facts:["Design is not decoration. Every padding value, font size, and colour choice is a decision that affects how a person feels.",
+          "I design from empathy outward — I start by asking 'who uses this and what do they feel?' before touching the code.",
+          "Accessibility and responsiveness aren't afterthoughts for me — they're built in from the first component."],
+   skills:['UI/UX Design','Empathy-led Design','Accessibility','Mobile-First']},
+
+  {id:13,tag:'LEARNING · GEM 13',title:'How I Learn',color:'#B02040',xpVal:60,
+   facts:["I learn by building — the fastest way to understand something is to ship it, break it, and fix it.",
+          "I'm active on GitHub. Every project I make is documented, versioned, and readable by others.",
+          "I stay current with the AI/web ecosystem — Claude, new React patterns, emerging CSS techniques."],
+   skills:['Self-taught Mindset','GitHub Portfolio','Documentation','Continuous Learning']},
+
+  {id:14,tag:'COLLABORATION · GEM 14',title:'Working With Others',color:'#9B6A3A',xpVal:70,
+   facts:["I demonstrated team capability at the hackathon — coordinating across design, development, and presentation in 48 hours.",
+          "I communicate clearly — I write readable code and maintain honest documentation.",
+          "I'm open to collaboration and new projects. I respond fast."],
+   skills:['Team Player','Clear Communicator','Open Source Mindset','Mentorship-ready']},
+
+  {id:15,tag:'FUTURE · GEM 15',title:"Where I'm Headed",color:'#B02040',xpVal:100,
+   facts:["I'm building toward a career at the intersection of AI and product engineering — where empathy meets engineering.",
+          "I'm interested in AI-driven interfaces, developer tools, and applications that meaningfully change how people experience the world.",
+          "Long-term: I want to contribute to projects that make technology feel more human, not less."],
+   skills:['AI + Product','Human-Computer Interaction','Full-Stack AI Apps','Open to Roles']},
+
+  {id:16,tag:'CONTACT · GEM 16',title:'Reach Out to Me',color:'#9B6A3A',xpVal:100,
+   facts:["I'm based in Hyderabad, India and open to remote opportunities worldwide.",
+          "I'm currently open to internships, freelance projects, collaborations, and full-time roles after graduation.",
+          "Email: mounishashaik@email.com — I respond."],
+   skills:['Hyderabad, India','Open to Work','Email Response','Portfolio Available']},
+];
+
+/* ════════════════════════════════════════
+   GAME ENGINE
+════════════════════════════════════════ */
+const gc=document.getElementById('game-canvas');
+const gx=gc.getContext('2d');
+let GW,GH,RAF=null,gameRunning=false;
+let player,platforms,gems,enemies,sparks,floats,cameraX,xp,gemCount,hp,keys={};
+let nearGem=null,infoOpen=false,lastZone='',bgTime=0;
+
+const TILE=44,GRAV=0.58,JUMP=-15,SPD=5.2,WORLD_W=7200,WORLD_H=580;
+
+/* Zone definitions */
+const ZONES=[
+  {x:0,    label:'START',    wallColor:'#F8E8EC',floorColor:'#F0D8DF',accent:'#B02040'},
+  {x:800,  label:'IDENTITY', wallColor:'#FDF5F0',floorColor:'#F5E8DF',accent:'#9B6A3A'},
+  {x:1700, label:'SKILLS',   wallColor:'#F8ECF0',floorColor:'#EFE0E6',accent:'#B02040'},
+  {x:2700, label:'PROJECT',  wallColor:'#FBF5EC',floorColor:'#F2E6D8',accent:'#9B6A3A'},
+  {x:3700, label:'MINDMATE', wallColor:'#F8ECEE',floorColor:'#EEE0E3',accent:'#B02040'},
+  {x:4700, label:'ACHIEVE',  wallColor:'#FAF3EC',floorColor:'#F0E6D8',accent:'#9B6A3A'},
+  {x:5700, label:'FUTURE',   wallColor:'#F6EDF1',floorColor:'#EADDE5',accent:'#B02040'},
+];
+
+function initGame(){
+  GW=gc.width=gc.offsetWidth; GH=gc.height=gc.offsetHeight;
+  xp=0;gemCount=0;hp=100;cameraX=0;
+  nearGem=null;infoOpen=false;bgTime=0;
+  document.getElementById('xp-val').textContent='0';
+  document.getElementById('gem-val').textContent='0';
+  document.getElementById('hp-bar').style.width='100%';
+  document.getElementById('zone-name').textContent='START';
+
+  player={x:120,y:420,w:26,h:34,vx:0,vy:0,onGround:false,facing:1,
+    frame:0,frameT:0,trail:[],invincible:0,wobble:0};
+
+  /* Platforms */
+  platforms=[];
+  // Ground strips
+  for(let x=0;x<WORLD_W;x+=TILE*4)
+    platforms.push({x,y:WORLD_H-TILE,w:TILE*4,h:TILE,type:'ground'});
+  // Floating platforms with varying heights for interesting traversal
+  const PL=[
+    // Zone 0 START
+    {x:180,y:460,w:160,h:14},{x:380,y:400,w:120,h:14},{x:540,y:340,w:100,h:14},{x:680,y:420,w:140,h:14},
+    // Zone 1 IDENTITY
+    {x:870,y:450,w:180,h:14},{x:1050,y:380,w:130,h:14},{x:1230,y:320,w:120,h:14},{x:1420,y:400,w:140,h:14},{x:1580,y:460,w:100,h:14},
+    // Zone 2 SKILLS
+    {x:1770,y:440,w:110,h:14},{x:1890,y:370,w:120,h:14},{x:2030,y:310,w:100,h:14},{x:2160,y:380,w:130,h:14},{x:2310,y:440,w:110,h:14},{x:2440,y:360,w:120,h:14},{x:2570,y:300,w:100,h:14},
+    // Zone 3 PROJECT
+    {x:2770,y:450,w:160,h:14},{x:2950,y:380,w:140,h:14},{x:3110,y:310,w:130,h:14},{x:3280,y:390,w:150,h:14},{x:3480,y:460,w:130,h:14},
+    // Zone 4 MINDMATE
+    {x:3760,y:440,w:140,h:14},{x:3930,y:370,w:120,h:14},{x:4080,y:300,w:130,h:14},{x:4250,y:380,w:140,h:14},{x:4420,y:450,w:120,h:14},{x:4560,y:330,w:110,h:14},
+    // Zone 5 ACHIEVE
+    {x:4770,y:440,w:150,h:14},{x:4960,y:360,w:130,h:14},{x:5130,y:290,w:120,h:14},{x:5290,y:380,w:140,h:14},{x:5490,y:450,w:130,h:14},
+    // Zone 6 FUTURE
+    {x:5760,y:440,w:160,h:14},{x:5960,y:360,w:140,h:14},{x:6160,y:290,w:130,h:14},{x:6360,y:380,w:140,h:14},{x:6560,y:450,w:160,h:14},{x:6780,y:360,w:180,h:14},
+  ];
+  PL.forEach(p=>platforms.push({...p,type:'plat'}));
+
+  /* Place gems on platforms */
+  const gemPositions=[
+    {pi:2,dy:-22},{pi:5,dy:-22},{pi:9,dy:-22},{pi:12,dy:-22},
+    {pi:15,dy:-22},{pi:18,dy:-22},{pi:21,dy:-22},{pi:24,dy:-22},
+    {pi:28,dy:-22},{pi:31,dy:-22},{pi:34,dy:-22},{pi:37,dy:-22},
+    {pi:40,dy:-22},{pi:44,dy:-22},{pi:47,dy:-22},{pi:50,dy:-22},
+  ];
+  gems=GEM_DATA.map((g,i)=>{
+    const idx=gemPositions[i]?gemPositions[i].pi:4+i*3;
+    const p=platforms[Math.min(idx,platforms.length-1)];
+    return{
+      x:p.x+p.w/2, y:p.y+(gemPositions[i]?gemPositions[i].dy:-22),
+      r:11, collected:false, data:g, pulse:Math.random()*Math.PI*2,
+      bobSpeed:.05+Math.random()*.02, bobAmp:5
+    };
+  });
+
+  /* Enemies — styled as "bugs" */
+  enemies=[];
+  const EDEFS=[
+    {x:500,y:WORLD_H-TILE-30,range:120},{x:1200,y:WORLD_H-TILE-30,range:100},
+    {x:2100,y:WORLD_H-TILE-30,range:130},{x:3000,y:WORLD_H-TILE-30,range:110},
+    {x:4000,y:WORLD_H-TILE-30,range:120},{x:4900,y:WORLD_H-TILE-30,range:100},
+    {x:5800,y:WORLD_H-TILE-30,range:130},{x:6600,y:WORLD_H-TILE-30,range:110},
+  ];
+  EDEFS.forEach((e,i)=>enemies.push({x:e.x,y:e.y,w:26,h:26,startX:e.x,range:e.range,
+    vx:1.4*(i%2===0?1:-1),hp:3,hit:0,frame:0,ft:0}));
+
+  sparks=[];floats=[];
+}
+
+function R(a,b){return a+Math.random()*(b-a);}
+function AABB(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;}
+
+function spawnSparks(x,y,col,n=10){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=R(2,6);
+    sparks.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:50,ml:50,color:col,r:R(2,4)});
+  }
+}
+function addFloat(x,y,t,c='#B02040'){floats.push({x,y,t,c,life:80,ml:80,vy:-1});}
+let toastTO=null;
+function toast(msg,dur=2400){
+  const el=document.getElementById('game-toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(toastTO);toastTO=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+function showInfoCard(g){
+  infoOpen=true;nearGem=null;
+  const d=g.data;
+  document.getElementById('ic-tag').textContent=d.tag;
+  document.getElementById('ic-title').textContent=d.title;
+  const body=document.getElementById('ic-body');
+  body.innerHTML=d.facts.map(f=>`<div class="ic-fact">${f}</div>`).join('')+
+    `<div class="ic-skill-row">${d.skills.map(s=>`<span class="ic-skill">${s}</span>`).join('')}</div>`+
+    `<div class="ic-xp">+${d.xpVal} XP AWARDED · GEM ${d.id} OF 16</div>`;
+  document.getElementById('info-card').classList.add('show');
+}
+
+function closeInfoCard(){
+  infoOpen=false;
+  document.getElementById('info-card').classList.remove('show');
+}
+document.getElementById('ic-close').addEventListener('click',closeInfoCard);
+
+function currentZone(){
+  return ZONES.slice().reverse().find(z=>player.x>=z.x)||ZONES[0];
+}
+
+function updateGame(){
+  if(!gameRunning||infoOpen)return;
+  bgTime+=0.008;
+
+  const left=keys['ArrowLeft']||keys['a']||keys['A'];
+  const right=keys['ArrowRight']||keys['d']||keys['D'];
+  const jump=keys['ArrowUp']||keys['w']||keys['W']||keys[' '];
+  const read=keys['e']||keys['E'];
+
+  if(left){player.vx=-SPD;player.facing=-1;}
+  else if(right){player.vx=SPD;player.facing=1;}
+  else player.vx*=0.78;
+
+  if(jump&&player.onGround){player.vy=JUMP;player.onGround=false;spawnSparks(player.x+player.w/2,player.y+player.h,'#B02040',6);}
+  player.vy+=GRAV;
+  player.x+=player.vx; player.y+=player.vy;
+  if(player.wobble>0)player.wobble--;
+  if(player.invincible>0)player.invincible--;
+
+  // Trail
+  player.trail.push({x:player.x+player.w/2,y:player.y+player.h/2});
+  if(player.trail.length>14)player.trail.shift();
+
+  // Platform collision
+  player.onGround=false;
+  platforms.forEach(p=>{
+    const ol=AABB(player,p);
+    if(!ol)return;
+    const ox=Math.min(player.x+player.w,p.x+p.w)-Math.max(player.x,p.x);
+    const oy=Math.min(player.y+player.h,p.y+p.h)-Math.max(player.y,p.y);
+    if(oy<ox){
+      if(player.vy>=0&&player.y+player.h>p.y){player.y=p.y-player.h;player.vy=0;player.onGround=true;}
+      else if(player.vy<0){player.y=p.y+p.h;player.vy=0;}
+    }else{
+      if(player.vx>0)player.x=p.x-player.w; else player.x=p.x+p.w; player.vx=0;
+    }
+  });
+
+  if(player.x<0)player.x=0;
+  if(player.x+player.w>WORLD_W)player.x=WORLD_W-player.w;
+  if(player.y>WORLD_H+100){player.y=100;player.vy=0;hp=Math.max(0,hp-12);document.getElementById('hp-bar').style.width=hp+'%';toast('⚠ Fell! −12 HP');}
+
+  // Gem proximity + auto-collect on touch
+  nearGem=null;
+  gems.forEach(g=>{
+    if(g.collected)return;
+    g.pulse+=g.bobSpeed;
+    const dx=player.x+player.w/2-g.x,dy=player.y+player.h/2-g.y;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<g.r+player.w/2){
+      // collect
+      g.collected=true; gemCount++;xp+=g.data.xpVal;
+      document.getElementById('xp-val').textContent=xp;
+      document.getElementById('gem-val').textContent=gemCount;
+      spawnSparks(g.x,g.y,g.data.color,16);
+      addFloat(g.x,g.y-24,`+${g.data.xpVal} XP`,g.data.color);
+      showInfoCard(g);
+      if(gemCount===16)setTimeout(()=>toast('🏆 ALL 16 GEMS! My full story unlocked! XP: '+xp,5000),400);
+    } else if(dist<80){nearGem=g;}
+  });
+  if(read&&nearGem){
+    nearGem.collected=true; gemCount++;xp+=nearGem.data.xpVal;
+    document.getElementById('xp-val').textContent=xp;
+    document.getElementById('gem-val').textContent=gemCount;
+    spawnSparks(nearGem.x,nearGem.y,nearGem.data.color,16);
+    showInfoCard(nearGem); nearGem=null;
+  }
+
+  // Enemies
+  enemies.forEach(e=>{
+    if(e.hp<=0)return;
+    e.x+=e.vx;
+    if(e.x<e.startX-e.range||e.x>e.startX+e.range)e.vx*=-1;
+    if(e.hit>0)e.hit--;
+    e.ft++;if(e.ft>10){e.frame=(e.frame+1)%2;e.ft=0;}
+    const ec={x:e.x,y:e.y,w:e.w,h:e.h};
+    if(player.invincible===0&&AABB(player,ec)){
+      if(player.vy>0&&player.y+player.h<e.y+e.h*0.55){
+        e.hp--;xp+=35;e.hit=50;player.vy=JUMP*0.65;player.onGround=false;
+        spawnSparks(e.x+e.w/2,e.y,'#B02040',12);
+        addFloat(e.x+e.w/2,e.y-20,'+35 XP','#B02040');
+        document.getElementById('xp-val').textContent=xp;
+        if(e.hp<=0){xp+=60;document.getElementById('xp-val').textContent=xp;toast('💥 Bug squashed! +60 XP');}
+      } else if(e.hit===0){
+        hp=Math.max(0,hp-10);player.invincible=90;player.wobble=20;
+        document.getElementById('hp-bar').style.width=hp+'%';
+        if(hp===0)toast('💀 KNOCKED OUT · Final XP: '+xp,4000);
+        else toast('⚡ Hit by bug! −10 HP');
+      }
+    }
+  });
+
+  // Sparks
+  for(let i=sparks.length-1;i>=0;i--){
+    const s=sparks[i];s.x+=s.vx;s.y+=s.vy;s.vy+=.2;s.life--;
+    if(s.life<=0)sparks.splice(i,1);
+  }
+  for(let i=floats.length-1;i>=0;i--){
+    const f=floats[i];f.y+=f.vy;f.life--;
+    if(f.life<=0)floats.splice(i,1);
+  }
+
+  // Camera
+  cameraX=Math.max(0,Math.min(player.x-GW*0.35,WORLD_W-GW));
+
+  // Zone update
+  const z=currentZone();
+  if(z.label!==lastZone){lastZone=z.label;document.getElementById('zone-name').textContent=z.label;}
+
+  // Mini-map
+  const prog=(player.x/WORLD_W)*100;
+  document.getElementById('mini-map-player').style.left=(prog/100*260)+'px';
+
+  // Anim frame
+  player.frameT++;if(player.frameT>7){player.frame=(player.frame+1)%4;player.frameT=0;}
+}
+
+/* ════ DRAW ════ */
+function drawGame(){
+  const zone=currentZone();
+  // Sky
+  gx.fillStyle=zone.wallColor;gx.fillRect(0,0,GW,GH);
+
+  // Soft background gradient
+  const sg=gx.createLinearGradient(0,0,0,GH);
+  sg.addColorStop(0,zone.wallColor);sg.addColorStop(1,zone.floorColor);
+  gx.fillStyle=sg;gx.fillRect(0,0,GW,GH);
+
+  // Subtle dot grid background
+  gx.save();gx.globalAlpha=0.04;
+  const dotSpacing=28;
+  for(let dx=(-cameraX%dotSpacing);dx<GW+dotSpacing;dx+=dotSpacing){
+    for(let dy2=0;dy2<GH;dy2+=dotSpacing){
+      gx.beginPath();gx.arc(dx,dy2,1.2,0,Math.PI*2);gx.fillStyle=zone.accent;gx.fill();
+    }
+  }
+  gx.restore();
+
+  gx.save();gx.translate(-cameraX,0);
+
+  // Zone background labels
+  ZONES.forEach(z=>{
+    gx.save();gx.globalAlpha=0.04;
+    gx.fillStyle=z.accent;
+    gx.font='700 160px Playfair Display,serif';
+    gx.fillText(z.label,z.x+16,WORLD_H-60);
+    gx.restore();
+    // Zone divider dashes
+    if(z.x>0){
+      gx.save();gx.strokeStyle=z.accent+'30';gx.lineWidth=1;gx.setLineDash([6,10]);
+      gx.beginPath();gx.moveTo(z.x,0);gx.lineTo(z.x,WORLD_H);gx.stroke();gx.setLineDash([]);
+      gx.restore();
+    }
+    // Zone name plate at top
+    gx.save();
+    const lx=z.x+20,ly=78;
+    gx.fillStyle='rgba(255,255,255,0.8)';
+    roundRect(gx,lx,ly,160,26,4);gx.fill();
+    gx.strokeStyle=z.accent+'50';gx.lineWidth=1;
+    roundRect(gx,lx,ly,160,26,4);gx.stroke();
+    gx.fillStyle=z.accent;gx.font='700 11px Share Tech Mono,monospace';
+    gx.fillText('// '+z.label,lx+10,ly+17);
+    gx.restore();
+  });
+
+  // Ground
+  for(const p of platforms){
+    if(p.x+p.w<cameraX-60||p.x>cameraX+GW+60)continue;
+    if(p.type==='ground'){
+      gx.fillStyle=zone.floorColor;gx.fillRect(p.x,p.y,p.w,p.h);
+      gx.fillStyle=currentZone().accent+'55';gx.fillRect(p.x,p.y,p.w,2);
+      // grid lines on ground
+      gx.fillStyle=currentZone().accent+'10';
+      for(let gx2=p.x;gx2<p.x+p.w;gx2+=TILE){gx.fillRect(gx2,p.y,1,p.h);}
+    } else {
+      const pz=ZONES.slice().reverse().find(z=>p.x>=z.x)||ZONES[0];
+      gx.fillStyle='rgba(255,255,255,0.7)';
+      roundRect(gx,p.x,p.y,p.w,p.h,4);gx.fill();
+      gx.strokeStyle=pz.accent+'50';gx.lineWidth=1.5;
+      roundRect(gx,p.x,p.y,p.w,p.h,4);gx.stroke();
+      // shine
+      gx.fillStyle='rgba(255,255,255,0.6)';gx.fillRect(p.x+4,p.y+2,p.w-8,3);
+    }
+  }
+
+  // Gems
+  gems.forEach(g=>{
+    if(g.collected)return;
+    const bob=Math.sin(g.pulse)*g.bobAmp;
+    const gy=g.y+bob;
+    const isNear=nearGem===g;
+    // Glow halo
+    const gl=gx.createRadialGradient(g.x,gy,0,g.x,gy,isNear?36:24);
+    gl.addColorStop(0,g.data.color+'40');gl.addColorStop(1,'transparent');
+    gx.fillStyle=gl;gx.beginPath();gx.arc(g.x,gy,isNear?36:24,0,Math.PI*2);gx.fill();
+    // Outer ring
+    gx.save();gx.globalAlpha=isNear?0.5:0.25;
+    gx.strokeStyle=g.data.color;gx.lineWidth=1;
+    gx.beginPath();gx.arc(g.x,gy,g.r+5+Math.sin(g.pulse*2)*2,0,Math.PI*2);gx.stroke();
+    gx.restore();
+    // Diamond
+    gx.save();gx.translate(g.x,gy);gx.rotate(Math.PI/4+g.pulse*.15);
+    gx.fillStyle=g.data.color;
+    gx.fillRect(-g.r,-g.r,g.r*2,g.r*2);
+    gx.fillStyle='rgba(255,255,255,0.45)';gx.fillRect(-g.r*.4,-g.r*.75,g.r*.35,g.r*.35);
+    gx.restore();
+    // Gem number label
+    gx.save();gx.fillStyle=g.data.color;gx.font='bold 8px Share Tech Mono,monospace';gx.textAlign='center';
+    gx.fillText('#'+g.data.id,g.x,gy-g.r-6);gx.textAlign='left';gx.restore();
+    // [E] hint if near
+    if(isNear){
+      gx.save();
+      gx.fillStyle='rgba(255,255,255,0.9)';
+      roundRect(gx,g.x-22,gy-g.r-30,44,18,3);gx.fill();
+      gx.strokeStyle=g.data.color+'80';gx.lineWidth=1;
+      roundRect(gx,g.x-22,gy-g.r-30,44,18,3);gx.stroke();
+      gx.fillStyle=g.data.color;gx.font='bold 9px Share Tech Mono,monospace';gx.textAlign='center';
+      gx.fillText('[E] READ',g.x,gy-g.r-18);gx.textAlign='left';gx.restore();
+    }
+  });
+
+  // Enemies — drawn as "bugs" (red creatures with X eyes)
+  enemies.forEach(e=>{
+    if(e.hp<=0)return;
+    const flash=e.hit>0&&e.hit%5<3;
+    const ex=e.x+e.w/2,ey=e.y+e.h/2;
+    gx.save();gx.translate(ex,ey);
+    // body
+    gx.fillStyle=flash?'#FF8888':'#E03050';
+    gx.beginPath();gx.ellipse(0,0,e.w/2,e.h/2,0,0,Math.PI*2);gx.fill();
+    gx.strokeStyle='#8B1A2F';gx.lineWidth=1.5;
+    gx.beginPath();gx.ellipse(0,0,e.w/2,e.h/2,0,0,Math.PI*2);gx.stroke();
+    // X eyes
+    gx.strokeStyle='#1A0810';gx.lineWidth=1.5;
+    [[-5,-5],[4,-5]].forEach(([bx,by])=>{
+      gx.beginPath();gx.moveTo(bx-2,by-2);gx.lineTo(bx+2,by+2);gx.stroke();
+      gx.beginPath();gx.moveTo(bx+2,by-2);gx.lineTo(bx-2,by+2);gx.stroke();
+    });
+    // legs animation
+    const legA=Math.sin(e.frame*Math.PI)*5;
+    gx.strokeStyle='#B02040';gx.lineWidth=2;
+    for(let i=-1;i<=1;i+=2){
+      gx.beginPath();gx.moveTo(i*6,e.h/2-2);gx.lineTo(i*8+legA*i,e.h/2+7);gx.stroke();
+      gx.beginPath();gx.moveTo(i*3,e.h/2-2);gx.lineTo(i*5-legA*i,e.h/2+7);gx.stroke();
+    }
+    // HP dots
+    for(let h2=0;h2<3;h2++){
+      gx.beginPath();gx.arc(-8+h2*8,-e.h/2-8,3,0,Math.PI*2);
+      gx.fillStyle=h2<e.hp?'#B02040':'rgba(180,100,100,0.2)';gx.fill();
+    }
+    gx.restore();
+  });
+
+  // Sparks
+  sparks.forEach(s=>{
+    gx.save();gx.globalAlpha=s.life/s.ml;gx.fillStyle=s.color;
+    gx.beginPath();gx.arc(s.x,s.y,s.r*(s.life/s.ml),0,Math.PI*2);gx.fill();gx.restore();
+  });
+
+  // Player trail
+  player.trail.forEach((t,i)=>{
+    const a=(i/player.trail.length)*0.22;
+    gx.save();gx.globalAlpha=a;gx.fillStyle='#B02040';
+    gx.beginPath();gx.arc(t.x,t.y,4*(i/player.trail.length),0,Math.PI*2);gx.fill();gx.restore();
+  });
+
+  // Player
+  const px=player.x,py=player.y,pw=player.w,ph=player.h;
+  const wobX=player.wobble>0?Math.sin(player.wobble)*3:0;
+  const flash=player.invincible>0&&Math.floor(player.invincible/6)%2===0;
+
+  // Shadow
+  gx.save();gx.globalAlpha=.12;
+  gx.beginPath();gx.ellipse(px+pw/2,WORLD_H-TILE+3,pw*.6,5,0,0,Math.PI*2);
+  gx.fillStyle='#1A0810';gx.fill();gx.restore();
+
+  if(!flash){
+    gx.save();gx.translate(px+pw/2+wobX,py+ph/2);
+    if(player.facing===-1)gx.scale(-1,1);
+    // Body — white shirt
+    gx.fillStyle='#F5F0F2';
+    gx.fillRect(-pw/2,-ph/2,pw,ph);
+    // Wine jacket
+    gx.fillStyle='#8B1A2F';
+    gx.fillRect(-pw/2,-ph/2,pw,ph*.55);
+    // Jacket collar detail
+    gx.fillStyle='#B02040';
+    gx.fillRect(-4,-ph/2+2,3,10);gx.fillRect(2,-ph/2+2,3,10);
+    // Face
+    gx.fillStyle='#F2C89A';
+    gx.beginPath();gx.ellipse(0,-ph/2-5,pw/2-3,8,0,0,Math.PI*2);gx.fill();
+    // Eyes
+    gx.fillStyle='#1A0810';
+    gx.beginPath();gx.arc(-4,-ph/2-6,1.5,0,Math.PI*2);gx.fill();
+    gx.beginPath();gx.arc(4,-ph/2-6,1.5,0,Math.PI*2);gx.fill();
+    // Smile
+    gx.strokeStyle='#1A0810';gx.lineWidth=1;
+    gx.beginPath();gx.arc(0,-ph/2-3,3,.1,Math.PI-.1);gx.stroke();
+    // Hair
+    gx.fillStyle='#1A0810';
+    gx.beginPath();gx.ellipse(0,-ph/2-11,pw/2-2,6,0,0,Math.PI*2);gx.fill();
+    gx.fillRect(-pw/2+1,-ph/2-15,6,10);
+    // Legs
+    const legOff=player.onGround?Math.sin(player.frame*Math.PI*.5)*5:0;
+    gx.fillStyle='#2A1018';
+    gx.fillRect(-pw/2+1,ph/2-10,pw/2-2,10+legOff);
+    gx.fillRect(1,ph/2-10,pw/2-2,10-legOff);
+    // Shoes
+    gx.fillStyle='#1A0810';
+    gx.fillRect(-pw/2,ph/2-2+legOff,pw/2+1,4);
+    gx.fillRect(0,ph/2-2-legOff,pw/2+1,4);
+    gx.restore();
+  }
+
+  // Floating texts
+  floats.forEach(f=>{
+    gx.save();gx.globalAlpha=f.life/f.ml;gx.fillStyle=f.c;
+    gx.font='bold 13px Share Tech Mono,monospace';gx.textAlign='center';
+    gx.fillText(f.t,f.x,f.y);gx.textAlign='left';gx.restore();
+  });
+
+  gx.restore(); // end camera translate
+
+  // Vignette (very subtle)
+  const vig=gx.createRadialGradient(GW/2,GH/2,GH*.4,GW/2,GH/2,GH*.85);
+  vig.addColorStop(0,'transparent');vig.addColorStop(1,'rgba(26,8,16,0.06)');
+  gx.fillStyle=vig;gx.fillRect(0,0,GW,GH);
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function gameLoop(){if(!gameRunning)return;updateGame();drawGame();RAF=requestAnimationFrame(gameLoop);}
+
+function startGame(){
+  document.getElementById('game-intro').classList.add('hidden');
+  GW=gc.width=gc.offsetWidth;GH=gc.height=gc.offsetHeight;
+  gameRunning=true;gameLoop();
+  toast('WASD / Arrows to move · SPACE to jump · Touch gems to collect!',3500);
+}
+
+function stopGame(){
+  gameRunning=false;closeInfoCard();
+  if(RAF){cancelAnimationFrame(RAF);RAF=null;}
+}
+
+window.addEventListener('resize',()=>{if(gameRunning){GW=gc.width=gc.offsetWidth;GH=gc.height=gc.offsetHeight;}});
+document.addEventListener('keydown',e=>{keys[e.key]=true;if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();});
+document.addEventListener('keyup',e=>{keys[e.key]=false;});
+
+// Touch
+const TB=(id,k)=>{
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.addEventListener('touchstart',e=>{keys[k]=true;e.preventDefault();},{passive:false});
+  el.addEventListener('touchend',e=>{keys[k]=false;e.preventDefault();},{passive:false});
+};
+TB('t-left','ArrowLeft');TB('t-right','ArrowRight');TB('t-jump',' ');TB('t-read','e');
+
+document.getElementById('game-start-btn').addEventListener('click',()=>{initGame();startGame();});
+document.getElementById('game-exit').addEventListener('click',()=>{
+  stopGame();document.body.classList.remove('anim-mode');
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('[data-mode="normal"]').classList.add('active');
+  document.getElementById('game-intro').classList.remove('hidden');
+});
+</script>
+</body>
+</html>
